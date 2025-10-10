@@ -9,9 +9,12 @@ Potentially add in a gauge for sythesizing fuel for generator and managing power
 
 
 ##  Parts
-4 hall effect sensors 
-4 ring lights, 1 per hole in the panel
-LCD screen 
-3 button 
-3 12v solenoid cabinet locks
-1 Really long LED strip 
+- 4 hall effect sensors 
+- 4 ring lights, 1 per hole in the panel
+- LCD screen
+- 3 button
+- 3 12v solenoid cabinet locks
+- 1 Really long LED strip
+
+## Diagram
+![Diagram](images/README_Diagram.jpg)
