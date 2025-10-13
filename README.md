@@ -1,18 +1,18 @@
 # Chemistry Fuel Panel
-For our project we’re essentially going to have a removable cannister that will fit into a few holes in the panel. The removable container will be used to spin inside the holes to determine different “gas levels” of the different elements. There will be some holes in the panel that users can lock the removable cylinder into place. There will be a button to confirm gas levels and another button to flush it out. 
+The chemistry fuel panel will be interacted with using a prop canister that is inserted into several holes in the panel. Each hole can use a pair of hall effect sensors to detect both the presense and direction of the canister. The canister will rotate freely in some holes which can be used as a selection mechanism, and it will lock in others to test if you have successfully completed the puzzle. Each of the free spinning holes will allow you to "select a gas level" for whatever that hole contains e.g. Oxygen. There will be a ring of leds around the hole that can give a visual readout of how much gas they are filling the canister with alongside a button to confirm that they have the desired gas level. Once mixing is complete they can insert the canister into the locking output to see if their chemistry experiment was a success. Some puzzles could be very easy, only requiring the correct balance of plain elements, while some could mix more complex chemicals and have to balance the pressure in the canister.
 
-On the panel there is an LCD screen for either instructions, a manual, and a periodic table. Depending on how hard we make the difficulty, depends on how complex the chemicals are, differnet variables like a limit on resources, temperature, and pressure to add scalability. 
+On the panel an LCD screen will show which chemicals are currently assigned to each filling port (the free spinning ones), the desired product chemical, and any other information that may change on the fly and can't be communicated with just the lights. There would be a manual with instructions on how to use the panel alongside some useful resources like a periodic table and some example problems.
 
-Potentially add in a gauge for sythesizing fuel for generator and managing power
+If there is enough time and space we might even add a way to fuel the ship's generators by synthesysing fuel right at the chemistry panel and filling up the generator. They might also need to route power or manage waste products from the generator.
 
 
 
 
 ##  Parts
-- 4 hall effect sensors 
-- 4 ring lights, 1 per hole in the panel
+- 10 hall effect sensors 
+- 5 ring lights, 1 per hole in the panel
 - LCD screen
-- 3 button
+- 3 buttons
 - 3 12v solenoid cabinet locks
 - 1 Really long LED strip
 
