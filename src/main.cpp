@@ -17,6 +17,8 @@ int numLightsOn = 0;
 
 bool present = false;
 
+bool button = false;
+
 void setup() {
   // put your setup code here, to run once:
   pinMode(2, OUTPUT);
@@ -24,8 +26,8 @@ void setup() {
 
   pinMode(35, INPUT);
   pinMode(34, INPUT);
-  pinMode(32, INPUT);
-  pinMode(25, INPUT);
+  pinMode(32, INPUT_PULLUP);
+  pinMode(25, INPUT_PULLUP);
 
   Serial.begin(115200);
 
@@ -39,18 +41,37 @@ void loop() {
   int value1 = analogRead(35);
   int value2 = analogRead(34);
 
-  bool button = digitalRead(32);
+  button = digitalRead(32);
 
-  if (button) {
+  Serial.print("HE: ");
+  Serial.print(value1);
+  Serial.print(", ");
+  Serial.println(value2);
+
+  Serial.print("Calibration: ");
+  Serial.print(num1);
+  Serial.print(", ");
+  Serial.println(num2);
+
+  if (button == false) {
 
     num1 = value1;
     num2 = value2;
 
   }
 
+  //Serial.print("button: ");
+  //Serial.println(button);
+
   double angle = (atan2(-(value2 - num2) , (value1 - num1))*180/PI) + 180;
 
   double flux = sqrt(pow(value1 - num1, 2) + pow(value2 - num2, 2));
+
+  //Serial.print("Flux: ");
+  //Serial.println(flux);
+
+  Serial.print("Angle: ");
+  Serial.println(angle);
   
   if (flux > 25){
       
@@ -106,7 +127,7 @@ void loop() {
     FastLED.show();
 
 
-    if (digitalRead(25) == HIGH){
+    if (digitalRead(25) == LOW){
 
       selection = numLightsOn;
 
@@ -132,14 +153,6 @@ void loop() {
   }
 
   delay(50);
-
-
-  if (button) {
-
-    num1 = value1;
-    num2 = value2;
-
-  }
 
 }
 
