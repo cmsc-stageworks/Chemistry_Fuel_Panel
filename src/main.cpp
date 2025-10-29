@@ -9,15 +9,34 @@ CRGB leds[NUM_LEDS];
 
 using std::atan2;
 
-int num1 = 0;
-int num2 = 0;
+#define RING_RESOLUTION 6
+#define SECTION1 0
+
+int calibration1 = 0;
+int calibration2 = 0;
 
 int selection = 0;
-int numLightsOn = 0;
+int canister1Value = 0;
 
 bool present = false;
 
 bool button = false;
+
+void setLeds(int section, int size, CRGB color){
+
+  for(int i = section; i < size; i++){
+
+    leds[i] = color;
+
+  }
+
+  for(int i = section + size; i < RING_RESOLUTION; i++){
+
+    leds[i] = CRGB(0,0,0);
+
+  }
+
+};
 
 void setup() {
   // put your setup code here, to run once:
@@ -38,34 +57,34 @@ void setup() {
 void loop() {
   // put your main code here, to run repeatedly:
 
-  int value1 = analogRead(35);
-  int value2 = analogRead(34);
+  int hallSensor1 = analogRead(35);
+  int hallSensor2 = analogRead(34);
 
   button = digitalRead(32);
 
   Serial.print("HE: ");
-  Serial.print(value1);
+  Serial.print(hallSensor1);
   Serial.print(", ");
-  Serial.println(value2);
+  Serial.println(hallSensor2);
 
   Serial.print("Calibration: ");
-  Serial.print(num1);
+  Serial.print(calibration1);
   Serial.print(", ");
-  Serial.println(num2);
+  Serial.println(calibration2);
 
   if (button == false) {
 
-    num1 = value1;
-    num2 = value2;
+    calibration1 = hallSensor1;
+    calibration2 = hallSensor2;
 
   }
 
   //Serial.print("button: ");
   //Serial.println(button);
 
-  double angle = (atan2(-(value2 - num2) , (value1 - num1))*180/PI) + 180;
+  double angle = (atan2(-(hallSensor2 - calibration2) , (hallSensor1 - calibration1))*180/PI) + 180;
 
-  double flux = sqrt(pow(value1 - num1, 2) + pow(value2 - num2, 2));
+  double fieldStrength = sqrt(pow(hallSensor1 - calibration1, 2) + pow(hallSensor2 - calibration2, 2));
 
   //Serial.print("Flux: ");
   //Serial.println(flux);
@@ -73,18 +92,15 @@ void loop() {
   Serial.print("Angle: ");
   Serial.println(angle);
   
-  if (flux > 25){
+  if (fieldStrength > 25){
       
     if (present == false) {
       present = true;
-      for(int i = 0; i < NUM_LEDS; i++){
-        leds[i] = CRGB::Green;
-      }
+      setLeds(SECTION1, RING_RESOLUTION, CRGB::Green);
       FastLED.show();
+
       delay(300);
-      for(int i = 0; i < NUM_LEDS; i++){
-        leds[i] = CRGB(0,0,0);
-      }
+      setLeds(SECTION1, RING_RESOLUTION, CRGB(0,0,0));
       FastLED.show();
     }
 
@@ -93,14 +109,10 @@ void loop() {
     if(present == true){
       present = false;
 
-      for(int i = 0; i < NUM_LEDS; i++){
-        leds[i] = CRGB::Red;
-      }
+      setLeds(SECTION1, RING_RESOLUTION, CRGB::Red);
       FastLED.show();
       delay(300);
-      for(int i = 0; i < NUM_LEDS; i++){
-        leds[i] = CRGB(0,0,0);
-      }
+      setLeds(SECTION1, RING_RESOLUTION, CRGB(0,0,0));
       FastLED.show();
 
     }
@@ -110,26 +122,17 @@ void loop() {
 
   if(present){
 
-    numLightsOn = (int)(((angle*(NUM_LEDS + 1))/360.0));
-    numLightsOn = numLightsOn % 7;
+    canister1Value = (int)(((angle*(NUM_LEDS + 1))/360.0));
+    canister1Value = canister1Value % 7;
 
 
-    for (int i = 0; i < numLightsOn; i++){
-
-      leds[i] = CRGB::Blue;
-
-    }
-    for(int i = numLightsOn; i < NUM_LEDS; i++){
-
-      leds[i] = CRGB(0,0,0);
-
-    }
+    setLeds(SECTION1, canister1Value, CRGB::Blue);
     FastLED.show();
 
 
     if (digitalRead(25) == LOW){
 
-      selection = numLightsOn;
+      selection = canister1Value;
 
       Serial.print("Lights: ");
       Serial.println(selection);
@@ -138,16 +141,7 @@ void loop() {
 
   } else if (selection != 0){
 
-    for (int i = 0; i < selection; i++){
-
-      leds[i] = CRGB::Blue;
-
-    }
-    for(int i = selection; i < NUM_LEDS; i++){
-
-      leds[i] = CRGB(0,0,0);
-
-    }
+    setLeds(SECTION1, selection, CRGB::Blue);
     FastLED.show();
 
   }
