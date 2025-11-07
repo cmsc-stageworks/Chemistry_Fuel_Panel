@@ -2,15 +2,30 @@
 #include "pins_arduino.h"
 #include <Arduino.h>
 #include <FastLED.h>
+#include <Wire.h>
+#include <Adafruit_SSD1306.h>
+#include <Adafruit_GFX.h>
+
 
 #define NUM_LEDS 6
 #define DATA_PIN 27
+
+#define SDA_PIN 21
+#define SCL_PIN 22
+#define SCREEN_WIDTH 128 // OLED display width, in pixels
+#define SCREEN_HEIGHT 64 // OLED display height, in pixels
+
 CRGB leds[NUM_LEDS];
 
 using std::atan2;
 
 #define RING_RESOLUTION 6
 #define SECTION1 0
+
+#define OLED_RESET     -1 // Reset pin # (or -1 if sharing Arduino reset pin)
+#define SCREEN_ADDRESS 0x3D ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
+
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 int calibration1 = 0;
 int calibration2 = 0;
@@ -21,6 +36,45 @@ int canister1Value = 0;
 bool present = false;
 
 bool button = false;
+
+void scanI2C(){
+  byte error, address;
+  int nDevices;
+
+  Serial.println("Scanning...");
+
+  nDevices = 0;
+  for(address = 1; address < 127; address++ )
+  {
+    // The i2c_scanner uses the return value of
+    // the Write.endTransmisstion to see if
+    // a device did acknowledge to the address.
+    Wire.beginTransmission(address);
+    error = Wire.endTransmission();
+
+    if (error == 0)
+    {
+      Serial.print("I2C device found at address 0x");
+      if (address<16)
+        Serial.print("0");
+      Serial.print(address,HEX);
+      Serial.println("  !");
+
+      nDevices++;
+    }
+    else if (error==4)
+    {
+      Serial.print("Unknown error at address 0x");
+      if (address<16)
+        Serial.print("0");
+      Serial.println(address,HEX);
+    }
+  }
+  if (nDevices == 0)
+    Serial.println("No I2C devices found\n");
+  else
+    Serial.println("done\n");
+}
 
 void setLeds(int section, int size, CRGB color){
 
@@ -39,6 +93,7 @@ void setLeds(int section, int size, CRGB color){
 };
 
 void setup() {
+  Serial.begin(115200);
   // put your setup code here, to run once:
   pinMode(2, OUTPUT);
   pinMode(12, OUTPUT);
@@ -47,10 +102,48 @@ void setup() {
   pinMode(34, INPUT);
   pinMode(32, INPUT_PULLUP);
   pinMode(25, INPUT_PULLUP);
+  Serial.println("pinMode Done");
+  delay(1000);
 
-  Serial.begin(115200);
+  Wire.setPins(SDA_PIN, SCL_PIN);
+  Wire.begin();
+
+  Serial.println("Preparing to scan");
+  scanI2C();
+
+  Serial.println("Wire Done");
+  delay(1000);
+  
 
   FastLED.addLeds<WS2812, DATA_PIN, GRB>(leds, NUM_LEDS);
+
+
+  
+  Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
+  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+    Serial.println(F("SSD1306 allocation failed"));
+    for(;;); // Don't proceed, loop forever
+  }
+
+  display.clearDisplay();
+  Serial.println("Clear Done");
+  delay(1000);
+
+  // Draw a single pixel in white
+  for(int16_t i=0; i<display.height()/2; i+=3) {
+    // The INVERSE color is used so rectangles alternate white/black
+    display.fillRect(i, i, display.width()-i*2, display.height()-i*2, SSD1306_INVERSE);
+    display.display(); // Update screen with each newly-drawn rectangle
+    delay(1);
+  }
+
+  delay(2000);
+  Serial.println("Draw Done");
+  delay(1000);
+  display.display(); // Update screen with each newly-drawn line
+  Serial.println("YESSS");
+
   
 }
 
