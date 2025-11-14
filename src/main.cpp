@@ -3,17 +3,15 @@
 #include <Arduino.h>
 #include <FastLED.h>
 #include <Wire.h>
-#include <Adafruit_SSD1306.h>
-#include <Adafruit_GFX.h>
+
+
+#include "i2c_display.h"
 
 
 #define NUM_LEDS 6
 #define DATA_PIN 27
 
-#define SDA_PIN 21
-#define SCL_PIN 22
-#define SCREEN_WIDTH 128 // OLED display width, in pixels
-#define SCREEN_HEIGHT 64 // OLED display height, in pixels
+
 
 CRGB leds[NUM_LEDS];
 
@@ -127,22 +125,21 @@ void setup() {
   }
 
   display.clearDisplay();
-  Serial.println("Clear Done");
+  //Serial.println("Clear Done");
   delay(1000);
 
-  // Draw a single pixel in white
-  for(int16_t i=0; i<display.height()/2; i+=3) {
-    // The INVERSE color is used so rectangles alternate white/black
-    display.fillRect(i, i, display.width()-i*2, display.height()-i*2, SSD1306_INVERSE);
-    display.display(); // Update screen with each newly-drawn rectangle
-    delay(1);
-  }
+  // display.setTextSize(1);      // Normal 1:1 pixel scale
+  // display.setTextColor(SSD1306_WHITE); // Draw white text
+  // display.setCursor(0, 0);     // Start at top-left corner
+  // display.cp437(true);         // Use full 256 char 'Code Page 437' font
+  // display.write("Hello There!\n General Kenobi!!!");
 
-  delay(2000);
-  Serial.println("Draw Done");
+  // display.display();
+
+  draw_element(&display, "He", 50, "4.00");
   delay(1000);
   display.display(); // Update screen with each newly-drawn line
-  Serial.println("YESSS");
+  //Serial.println("YESSS");
 
   
 }
