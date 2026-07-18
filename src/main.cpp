@@ -1,152 +1,131 @@
 #include "HardwareSerial.h"
 #include "pins_arduino.h"
+#include "MainBoardPinout.h"
+#include <MainBoard.h>
 #include <Arduino.h>
-#include <FastLED.h>
+#include <Wire.h>
+#include <Adafruit_SSD1306.h>
+#include <Adafruit_NeoPixel.h>
+#include <Adafruit_ST7796S.h>
 
-#define NUM_LEDS 6
-#define DATA_PIN 27
-CRGB leds[NUM_LEDS];
+#define NUMPIXELS 16
 
-using std::atan2;
+#define HALL1 0x47
+#define HALL2 0x46
 
-#define RING_RESOLUTION 6
-#define SECTION1 0
+#define M_PI 3.14159265358979323846
 
-int calibration1 = 0;
-int calibration2 = 0;
+#define INPUT_THRESHOLD 20.0
 
-int selection = 0;
-int canister1Value = 0;
 
-bool present = false;
+int hall1 = 0;
+int hall2 = 0;
 
-bool button = false;
+int hall1Calibration = 0;
+int hall2Calibration = 0;
 
-void setLeds(int section, int size, CRGB color){
+float fieldStrength = 0;
 
-  for(int i = section; i < size; i++){
+int numLeds = 0;
 
-    leds[i] = color;
+Adafruit_NeoPixel pixels(NUMPIXELS, MAIN_BOARD_WS2812_PIN, NEO_RGB + NEO_KHZ800);
+Adafruit_SSD1306 display(128, 64, &Wire);
+Adafruit_ST7796S bigDisplay(MAIN_BOARD_LCD_1_CS, MAIN_BOARD_LCD_DC, MAIN_BOARD_LCD_RESET);
 
-  }
+void show_shapes() {
+  // Draw outlined and filled shapes. This demonstrates:
+  // - Enclosed shapes supported by GFX (points & lines are shown later).
+  // - Adapting to different-sized displays, and to rounded corners.
 
-  for(int i = section + size; i < RING_RESOLUTION; i++){
+  const int16_t cx = display.width() / 2;  // Center of screen =
+  const int16_t cy = display.height() / 2; // half of width, height
+  int16_t minor = min(cx, cy);             // Lesser of half width or height
+  // Shapes will be drawn in a square region centered on the screen. But one
+  // particular screen -- rounded 240x280 ST7789 -- has VERY rounded corners
+  // that would clip a couple of shapes if drawn full size. If using that
+  // screen type, reduce area by a few pixels to avoid drawing in corners
+  const uint8_t pad = 5;                   // Space between shapes is 2X this
+  const int16_t size = minor - pad;        // Shapes are this width & height
+  const int16_t half = size / 2;           // 1/2 of shape size
 
-    leds[i] = CRGB(0,0,0);
+  bigDisplay.fillScreen(0); // Start by clearing the screen; color 0 = black
 
-  }
+  // Draw outline version of basic shapes: rectangle, triangle, circle and
+  // rounded rectangle in different colors. Rather than hardcoded numbers
+  // for position and size, some arithmetic helps adapt to screen dimensions.
+  bigDisplay.drawRect(cx - minor, cy - minor, size, size, 0xF800);
+  bigDisplay.drawTriangle(cx + pad, cy - pad, cx + pad + half, cy - minor,
+                       cx + minor - 1, cy - pad, 0x07E0);
+  bigDisplay.drawCircle(cx - pad - half, cy + pad + half, half, 0x001F);
+  bigDisplay.drawRoundRect(cx + pad, cy + pad, size, size, size / 5, 0xFFE0);
+  delay(250);
 
-};
+  // Draw same shapes, same positions, but filled this time.
+  bigDisplay.fillRect(cx - minor, cy - minor, size, size, 0xF800);
+  bigDisplay.fillTriangle(cx + pad, cy - pad, cx + pad + half, cy - minor,
+                       cx + minor - 1, cy - pad, 0x07E0);
+  bigDisplay.fillCircle(cx - pad - half, cy + pad + half, half, 0x001F);
+  bigDisplay.fillRoundRect(cx + pad, cy + pad, size, size, size / 5, 0xFFE0);
+  delay(250);
+} // END SHAPE EXAMPLE
 
-void setup() {
-  // put your setup code here, to run once:
-  pinMode(2, OUTPUT);
-  pinMode(12, OUTPUT);
+void setup(){
+    MainBoardStart(false);
+    Serial.begin(115200);
+    pixels.begin();
 
-  pinMode(35, INPUT);
-  pinMode(34, INPUT);
-  pinMode(32, INPUT_PULLUP);
-  pinMode(25, INPUT_PULLUP);
+    mainBoardSetI2CBus(0);
 
-  Serial.begin(115200);
+    display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+    display.clearDisplay();
 
-  FastLED.addLeds<WS2812, DATA_PIN, GRB>(leds, NUM_LEDS);
-  
+    display.setTextSize(1);
+    display.setTextColor(SSD1306_WHITE);
+    display.setCursor(0,0);
+
+    display.println("init");
+    display.display();
+
+    analogWrite(MAIN_BOARD_LCD_BRIGHTNESS, 0xFF);
+
+    bigDisplay.init(320, 480, 0, 0, ST7796S_BGR);
+    bigDisplay.invertDisplay(true);k
+    bigDisplay.fillScreen(0);
+
+    hall1Calibration = mainBoardGetAnalogMux(HALL1);
+    hall2Calibration = mainBoardGetAnalogMux(HALL2);
 }
 
-void loop() {
-  // put your main code here, to run repeatedly:
-
-  int hallSensor1 = analogRead(35);
-  int hallSensor2 = analogRead(34);
-
-  button = digitalRead(32);
-
-  Serial.print("HE: ");
-  Serial.print(hallSensor1);
-  Serial.print(", ");
-  Serial.println(hallSensor2);
-
-  Serial.print("Calibration: ");
-  Serial.print(calibration1);
-  Serial.print(", ");
-  Serial.println(calibration2);
-
-  if (button == false) {
-
-    calibration1 = hallSensor1;
-    calibration2 = hallSensor2;
-
-  }
-
-  //Serial.print("button: ");
-  //Serial.println(button);
-
-  double angle = (atan2(-(hallSensor2 - calibration2) , (hallSensor1 - calibration1))*180/PI) + 180;
-
-  double fieldStrength = sqrt(pow(hallSensor1 - calibration1, 2) + pow(hallSensor2 - calibration2, 2));
-
-  //Serial.print("Flux: ");
-  //Serial.println(flux);
-
-  Serial.print("Angle: ");
-  Serial.println(angle);
-  
-  if (fieldStrength > 25){
-      
-    if (present == false) {
-      present = true;
-      setLeds(SECTION1, RING_RESOLUTION, CRGB::Green);
-      FastLED.show();
-
-      delay(300);
-      setLeds(SECTION1, RING_RESOLUTION, CRGB(0,0,0));
-      FastLED.show();
+void loop(){
+    if(fieldStrength > INPUT_THRESHOLD){
+        for(int i = 0; i < numLeds; i++){
+            pixels.setPixelColor(i, pixels.Color(0,125,0));
+        }
+        for(int i = numLeds; i < NUMPIXELS; i++){
+            pixels.setPixelColor(i, pixels.Color(0,0,0));
+        }
+        pixels.show();
+    }else{
+        pixels.clear();
+        pixels.show();
     }
 
-  }else{
 
-    if(present == true){
-      present = false;
+    hall1 = mainBoardGetAnalogMux(HALL1) - hall1Calibration;
+    hall2 = mainBoardGetAnalogMux(HALL2) - hall2Calibration;
 
-      setLeds(SECTION1, RING_RESOLUTION, CRGB::Red);
-      FastLED.show();
-      delay(300);
-      setLeds(SECTION1, RING_RESOLUTION, CRGB(0,0,0));
-      FastLED.show();
+    float angle = std::atan2(-hall1, -hall2) + M_PI;
 
-    }
+    fieldStrength = std::sqrt(hall1*hall1 + hall2*hall2);
 
-  }
+    Serial.println(fieldStrength);
 
+    Serial.print("Angle: ");
+    Serial.print(angle);
+    Serial.print(",  NumLeds: ");
+    Serial.println(numLeds);
 
-  if(present){
+    show_shapes();
 
-    canister1Value = (int)(((angle*(NUM_LEDS + 1))/360.0));
-    canister1Value = canister1Value % 7;
-
-
-    setLeds(SECTION1, canister1Value, CRGB::Blue);
-    FastLED.show();
-
-
-    if (digitalRead(25) == LOW){
-
-      selection = canister1Value;
-
-      Serial.print("Lights: ");
-      Serial.println(selection);
-
-    }
-
-  } else if (selection != 0){
-
-    setLeds(SECTION1, selection, CRGB::Blue);
-    FastLED.show();
-
-  }
-
-  delay(50);
-
+    numLeds = angle * NUMPIXELS / (2 * M_PI) + 1;
 }
-
