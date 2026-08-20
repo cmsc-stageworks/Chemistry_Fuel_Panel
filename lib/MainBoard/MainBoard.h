@@ -2,6 +2,7 @@
 #define MAIN_BOARD_H
 
 #include "MainBoardPinout.h"
+#include "SPI.h"
 #include <TCA9555.h>
 
 #define MAIN_BOARD_DIGITAL_PORT_1 0
@@ -25,6 +26,8 @@ int MainBoardStart(bool initSD = true);
 static bool mainBoardInitI2CMux();
 bool mainBoardSetI2CBus(uint8_t bus);
 static bool mainBoardInitI2CMux();
+
+extern SPIClass mainBoardSpi;
 
 bool mainBoardDigitalPinMode(uint8_t pin, uint8_t mode);
 bool mainBoard16DigitalPinMode(uint8_t chip, uint16_t mode);

@@ -20,6 +20,25 @@ static bool returnI2CBusToSet();
 static bool setOnboardI2CBus();
 
 int MainBoardStart(bool initSD){;
+
+    pinMode(MAIN_BOARD_LCD_RESET, OUTPUT);
+    digitalWrite(MAIN_BOARD_LCD_RESET, HIGH);
+
+    pinMode(MAIN_BOARD_LCD_DC, OUTPUT);
+    digitalWrite(MAIN_BOARD_LCD_DC, HIGH);
+
+    pinMode(MAIN_BOARD_LCD_1_CS, OUTPUT);
+    digitalWrite(MAIN_BOARD_LCD_1_CS, HIGH); // Disable display 1
+
+    pinMode(MAIN_BOARD_LCD_2_CS, OUTPUT);
+    digitalWrite(MAIN_BOARD_LCD_2_CS, HIGH); // Disable display 2
+
+    pinMode(MAIN_BOARD_ETHERNET_CS, OUTPUT);
+    digitalWrite(MAIN_BOARD_ETHERNET_CS, HIGH); // Disable Ethernet
+
+    pinMode(MAIN_BOARD_SD_CS, OUTPUT);
+    digitalWrite(MAIN_BOARD_SD_CS, HIGH); // Disable SD
+
     pinMode(MAIN_BOARD_WS2812_PIN, OUTPUT);
     pinMode(MAIN_BOARD_SPKR, OUTPUT);
     pinMode(MAIN_BOARD_ANALOG_MUX_IN, INPUT);
@@ -29,7 +48,7 @@ int MainBoardStart(bool initSD){;
 
     mainBoardSpi.begin(MAIN_BOARD_SCK, MAIN_BOARD_MISO, MAIN_BOARD_MOSI); // CLK, MISO, MOSI
     mainBoardSpi.setFrequency(MAIN_BOARD_SPI_FREQ);
-    mainBoardSpi.begin();
+    //mainBoardSpi.begin();
 
     if (initSD && !mainBoardSD.begin(SdSpiConfig(MAIN_BOARD_SD_CS, SHARED_SPI, MAIN_BOARD_SD_SPEED, &mainBoardSpi))) { 
         Serial.println(F(

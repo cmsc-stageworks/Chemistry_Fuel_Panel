@@ -1,3 +1,7 @@
 {
-    "idf.pythonInstallPath": "C:\\Espressif\\tools\\idf-python\\3.11.2\\python.exe"
+    "idf.pythonInstallPath": "C:\\Espressif\\tools\\idf-python\\3.11.2\\python.exe",
+    "clangd.arguments": [
+        "--compile-commands-dir=/home/gavin/Projects/Github/Chemistry_Fuel_Panel/.cache/clangd",
+        "--query-driver=/home/gavin/.platformio/packages/toolchain-*/bin/*,/home/gavin/.platformio/packages/tool-*/bin/*"
+    ]
 }
