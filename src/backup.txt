@@ -26,7 +26,7 @@
 #define OLED_WIDTH 128
 #define OLED_HEIGHT 64
 
-#define PUZZLE_COUNT 10
+#define PUZZLE_COUNT 6
 
 typedef struct{
 
@@ -107,58 +107,6 @@ void updateLeds(){
 
 }
 
-void drawChemicalFormula(){
-
-    bigDisplay.setTextSize(3);
-    bigDisplay.fillScreen(0xffff);
-    bigDisplay.setTextColor(0,0xffff);
-    bigDisplay.setCursor(50,100);
-    bigDisplay.println("Make a chemical:");
-    bigDisplay.setCursor(70,150);
-    
-    bool number = false;
-    bool notFirstNumber = false;
-
-    for (char i = 0; i < 20; i++){
-
-        number = false;
-
-        if(target[i] == 0){
-            return;
-        }
-
-        if(static_cast<int>(target[i]) >= 48 && static_cast<int>(target[i]) <= 57){
-            number = true;
-        }
-
-        if(static_cast<int>(target[i] == 32)){
-            notFirstNumber = false;
-        }else if(!number){
-            notFirstNumber = true;
-        }
-
-        
-
-        Serial.print(number);
-        Serial.print(", ");
-        Serial.println(static_cast<int>(target[i]));
-
-        
-
-        if(number && notFirstNumber){
-            bigDisplay.setTextSize(2);
-            bigDisplay.setCursor(bigDisplay.getCursorX(),164);
-        }else{
-            bigDisplay.setTextSize(3);
-            bigDisplay.setCursor(bigDisplay.getCursorX(),150);
-        }
-
-        bigDisplay.print(target[i]);
-
-    }
-
-}
-
 void updateDisplays(){
 
     for(char i = 0; i < 3; i++){
@@ -226,10 +174,6 @@ void fillPuzzles(){
     allPuzzles[3] = puzzleCreate("CaCO3", "CO2", "H2O", 6, 6, 6, "6Ca(HCO3)2");
     allPuzzles[4] = puzzleCreate("SO2","O2","H2O", 2, 1, 2, "?H2SO4");
     allPuzzles[5] = puzzleCreate("Fe", "O2", "H2O", 4, 3, 6, "?Fe(OH)3");
-    allPuzzles[6] = puzzleCreate("N2", "H2", "", 3, 9, 0, "6NH3");
-    allPuzzles[7] = puzzleCreate("NO2", "H2O", "O2", 8, 4, 2, "8HNO3");
-    allPuzzles[8] = puzzleCreate("CO2", "H2O", "", 12, 12, 0, "2C6H12O6 + 12O2");
-    allPuzzles[9] = puzzleCreate("NH3", "O2", "", 4, 5, 0, "4NO + 6H2O");
 }
 
 void nextPuzzle(){
@@ -266,7 +210,13 @@ void refreshPuzzle(){
 
     litLeds[0] = 0; litLeds[1] = 0; litLeds[2] = 0;
 
-    drawChemicalFormula();
+    bigDisplay.setTextSize(3);
+    bigDisplay.fillScreen(0xffff);
+    bigDisplay.setTextColor(0,0xffff);
+    bigDisplay.setCursor(50,100);
+    bigDisplay.println("Make a chemical:");
+    bigDisplay.setCursor(70,150);
+    bigDisplay.println(target);
 
     pixels.fill(0,0,NUMPIXELS*3);
     pixels.show();
@@ -347,10 +297,15 @@ void setup(){
 }
 
 void loop(){
-
+    Serial.print("Halls");
     for (uint8_t i = 0; i < 8; i++){
-
-        hall[i] = mainBoardGetAnalogMux(hallPin[i]) - hallCalibration[i];
+        uint16_t num = mainBoardGetAnalogMux(hallPin[i]);
+        hall[i] = num - hallCalibration[i];
+        Serial.print(hall[i]);
+        Serial.print(", ");
+        Serial.print(num);
+        Serial.print(", ");
+        Serial.println(hallCalibration[i]);
         
     }
 
@@ -389,10 +344,7 @@ void loop(){
             }
 
             if(!locked[i]){
-                angles[i] = std::atan2(hall[2*i], hall[2*i+1]) + M_PI + 0.25;
-                if(angles[i] > M_PI * 2){
-                    angles[i] -= M_PI *2;
-                }
+                angles[i] = std::atan2(hall[2*i], hall[2*i+1]) + M_PI;
             }
 
             if(!present[i]){
@@ -406,13 +358,19 @@ void loop(){
             }
             present[i] = false;
         }
+
+        Serial.print("A");
+        Serial.print(i);
+        Serial.print(": ");
+        Serial.print(angles[i]);
+        Serial.print(",   ");
         
     }
-
+    Serial.println();
 
     for(char i; i < 3; i++){
         if((fieldStrength[i] > INPUT_THRESHOLD) && !locked[i]){
-            litLeds[i] = std::round(std::min(static_cast<int>((angles[i] * NUMPIXELS / (2 * M_PI))) + 1, NUMPIXELS));
+            litLeds[i] = std::min(static_cast<int>((angles[i] * NUMPIXELS / (2 * M_PI))) + 1, NUMPIXELS);
         }else{
             if(!locked[i]){
                 litLeds[i] = 0;
@@ -440,6 +398,11 @@ void loop(){
         }
     }
 
+
+    Serial.print("Present: ");
+    Serial.print(present[3]);
+    Serial.print(", Button: ");
+    Serial.println(buttonsPressed[3]);
 
     if(buttonsPressed[3] && present[3] && angles[3] > 1.5){
 
